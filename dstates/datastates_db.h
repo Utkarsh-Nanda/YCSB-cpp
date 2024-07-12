@@ -9,10 +9,12 @@
 
 #include <string>
 #include <mutex>
-
+#include <atomic>
 #include "core/db.h"
 #include "utils/properties.h"
-
+#include <vector>
+#include <limits>
+#include <unordered_map>
 #include "dstates/vordered_kv.hpp"
 
 #define __DEBUG
@@ -20,16 +22,28 @@
 
 namespace ycsbc {
 
-typedef vordered_kv_t<std::string, std::string> dstates_kv_t;
+//typedef vordered_kv_t<std::string, std::string> dstates_kv_t;
+ typedef vordered_kv_t<std::string, std::string, emem_history_t<std::string, std::string>> dstates_kv_t;
 
 class DataStatesDB : public DB {
 public:
     DataStatesDB() {}
     ~DataStatesDB() {}
 
-    void Init();
 
+    void Init();
     void Cleanup();
+
+
+
+    
+    static void PrintStatistics();  
+    static  void UpdateStatistics(const std::string &key, bool is_insert);
+   
+
+
+
+
     int count = 0;
     Status Read(const std::string &table, const std::string &key,
                 const std::vector<std::string> *fields, std::vector<Field> &result) {
@@ -54,6 +68,21 @@ public:
     }
 
 private:
+
+
+    static std::atomic<int> insert_count;
+    static std::atomic<int> update_count;
+    static std::unordered_map<std::string, int> operations_per_key;
+    static std::atomic<int> min_ops_per_key;
+    static std::atomic<int> max_ops_per_key;
+    static std::atomic<int> total_ops;
+    static std::atomic<int> unique_keys;
+
+
+
+
+
+
     static void SerializeRow(const std::vector<Field> &values, std::string &data);
     static void DeserializeRowFilter(std::vector<Field> &values, const char *p, const char *lim,
                                      const std::vector<std::string> &fields);

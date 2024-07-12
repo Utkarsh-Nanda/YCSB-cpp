@@ -24,9 +24,23 @@ namespace {
 
 namespace ycsbc {
 
+
+
+
+std::atomic<int> DataStatesDB::insert_count(0);
+std::atomic<int> DataStatesDB::update_count(0);
+std::unordered_map<std::string, int> DataStatesDB::operations_per_key;
+std::atomic<int> DataStatesDB::min_ops_per_key(std::numeric_limits<int>::max());
+std::atomic<int> DataStatesDB::max_ops_per_key(0);
+std::atomic<int> DataStatesDB::total_ops(0);
+std::atomic<int> DataStatesDB::unique_keys(0);
+
+
+
 dstates_kv_t *DataStatesDB::db_ = nullptr;
 int DataStatesDB::ref_cnt_ = 0;
 std::mutex DataStatesDB::mu_;
+
 
 void DataStatesDB::Init() {
     const std::lock_guard<std::mutex> lock(mu_);
@@ -171,6 +185,11 @@ DB::Status DataStatesDB::UpdateSingle(const std::string &table, const std::strin
     SerializeRow(current_values, data);
     if (!db_->insert(key, data))
 	throw utils::Exception("vordered_kv_t::update failed");
+    
+    
+    UpdateStatistics(key, false);
+
+    
     return kOK;
 }
 
@@ -186,6 +205,13 @@ DB::Status DataStatesDB::InsertSingle(const std::string &table, const std::strin
   SerializeRow(values, data);
   if (!db_->insert(key, data))
       throw utils::Exception("vordered_kv_t::insert failed");
+  
+
+
+    UpdateStatistics(key, true);
+
+
+
   return kOK;
 }
 
@@ -194,6 +220,62 @@ DB::Status DataStatesDB::DeleteSingle(const std::string &table, const std::strin
 	throw utils::Exception("vordered_kv_t::remove failed");
     return kOK;
 }
+
+
+
+
+
+
+
+void DataStatesDB::UpdateStatistics(const std::string& key, bool is_insert) {
+    if (is_insert) {
+        insert_count++;
+    } else {
+        update_count++;
+    }
+
+    int ops = ++operations_per_key[key];
+    if (ops == 1) {
+        unique_keys++;
+    }
+
+    int current_min = min_ops_per_key.load();
+    while (ops < current_min && !min_ops_per_key.compare_exchange_weak(current_min, ops)) {}
+
+    int current_max = max_ops_per_key.load();
+    while (ops > current_max && !max_ops_per_key.compare_exchange_weak(current_max, ops)) {}
+
+    total_ops.fetch_add(1, std::memory_order_relaxed);
+
+}
+
+void DataStatesDB::PrintStatistics() {
+    std::cout << "Total inserts: " << insert_count << std::endl;
+    std::cout << "Total updates: " << update_count << std::endl;
+    std::cout << "Unique keys: " << unique_keys << std::endl;
+    std::cout << "Min operations per key: " << min_ops_per_key << std::endl;
+    std::cout << "Max operations per key: " << max_ops_per_key << std::endl;
+    
+    int total_unique_keys = unique_keys.load();
+    if (total_unique_keys > 0) {
+        double avg_ops = (double) total_ops.load() / total_unique_keys;
+        std::cout << "Average operations per key: " << avg_ops << std::endl;
+    } else {
+        std::cout << "Average operations per key: N/A" << std::endl;
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 DB *NewDataStatesDB() {
     return new DataStatesDB;

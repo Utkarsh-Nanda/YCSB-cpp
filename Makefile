@@ -23,13 +23,23 @@ BIND_SQLITE ?= 0
 
 # Extra options
 DEBUG_BUILD ?= 1
-EXTRA_CXXFLAGS ?= -I$(DEPS_ROOT)/include
-EXTRA_LDFLAGS ?= -L$(DEPS_ROOT)/lib -ldl
+#EXTRA_CXXFLAGS ?= -I$(DEPS_ROOT)/include
+#EXTRA_LDFLAGS ?= -L$(DEPS_ROOT)/lib -ldl
+
+
+#                                rocksdb header files include                            boost header files include        datastates header files include
+EXTRA_CXXFLAGS ?= -I/home/utkarshnanda/ALCFBeginnersGuide/polaris/argonne/rocksdb/include -I/home/utkarshnanda/local/include -I$(DEPS_ROOT)/include
+#                                rocksdb library files include                            boost library files include        libpmemobj library files include
+EXTRA_LDFLAGS ?= -L/home/utkarshnanda/ALCFBeginnersGuide/polaris/argonne/rocksdb -ldl -L/home/utkarshnanda/local/lib        -L$(HOME)/deploy/lib64
+
+
+
+
 
 # HdrHistogram for tail latency report
-BIND_HDRHISTOGRAM ?= 1
+BIND_HDRHISTOGRAM ?= 0
 # Build and statically link library, submodule required
-BUILD_HDRHISTOGRAM ?= 1
+BUILD_HDRHISTOGRAM ?= 0
 
 #----------------------------------------------------------
 

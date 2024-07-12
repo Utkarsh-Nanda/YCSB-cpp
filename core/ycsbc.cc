@@ -29,6 +29,9 @@
 #include "utils/timer.h"
 #include "utils/utils.h"
 
+#include "../dstates/datastates_db.h"
+
+
 void UsageMessage(const char *command);
 bool StrStartWith(const char *str, const char *pre);
 void ParseCommandLine(int argc, const char *argv[], ycsbc::utils::Properties &props);
@@ -171,6 +174,14 @@ int main(const int argc, const char *argv[]) {
     std::cout << "Load runtime(sec): " << runtime << std::endl;
     std::cout << "Load operations(ops): " << sum << std::endl;
     std::cout << "Load throughput(ops/sec): " << sum / runtime << std::endl;
+
+
+
+    ycsbc::DataStatesDB::PrintStatistics();
+
+
+
+
   }
 
   measurements->Reset();
@@ -233,6 +244,12 @@ int main(const int argc, const char *argv[]) {
     std::cout << "Run runtime(sec): " << runtime << std::endl;
     std::cout << "Run operations(ops): " << sum << std::endl;
     std::cout << "Run throughput(ops/sec): " << sum / runtime << std::endl;
+
+ 
+    ycsbc::DataStatesDB::PrintStatistics();
+
+
+
   }
 
   for (int i = 0; i < num_threads; i++) {
